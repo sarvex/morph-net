@@ -101,7 +101,7 @@ def flop_coeff(op):
     num_elements = kernel_num_elements(cost_calculator.get_input_activation(op))
   else:
     # Can only happen if elements are added to FLOP_OPS and not taken care of.
-    assert False, '%s in cost_calculator.FLOP_OPS but not handled' % op.type
+    assert False, f'{op.type} in cost_calculator.FLOP_OPS but not handled'
   # Handle dynamic shaping while keeping old code path to not break
   # other clients.
   return 2.0 * num_elements * _get_conv_filter_size(op)
@@ -201,12 +201,8 @@ def memory_function(op, is_regularization, num_alive_inputs, num_alive_outputs,
         # Skip the reduction_indices tensor for tf.reduction_sum op.
         continue
       input_tensors.append(tensor)
-  for i, tensor in enumerate(op.outputs):
-    if 'FusedBatchNorm' in op.type and i > 0:
-      # Skip other batch norm outputs.
-      continue
-    output_tensors.append(tensor)
-
+  output_tensors.extend(tensor for i, tensor in enumerate(op.outputs)
+                        if 'FusedBatchNorm' not in op.type or i <= 0)
   if op.type == 'ConcatV2':
     # For concat, the alive/regularization of the input is the same as the
     # output, but split into multiple tensors.  For simplicity, treat the input
@@ -240,18 +236,17 @@ def memory_function(op, is_regularization, num_alive_inputs, num_alive_outputs,
   output_payloads = []
   bilinear_payloads = []
   if is_regularization:
-    for input_payload in normalized_input_payloads:
-      input_payloads.append(input_payload * batch_size * reg_inputs)
-    for output_payload in normalized_output_payloads:
-      output_payloads.append(output_payload * batch_size * reg_outputs)
-    for bilinear_payload in normalized_bilinear_payloads:
-      bilinear_payloads.append(
-          bilinear_payload * (
-              num_alive_inputs * reg_outputs + num_alive_outputs * reg_inputs))
+    input_payloads.extend(input_payload * batch_size * reg_inputs
+                          for input_payload in normalized_input_payloads)
+    output_payloads.extend(output_payload * batch_size * reg_outputs
+                           for output_payload in normalized_output_payloads)
+    bilinear_payloads.extend(
+        bilinear_payload *
+        (num_alive_inputs * reg_outputs + num_alive_outputs * reg_inputs)
+        for bilinear_payload in normalized_bilinear_payloads)
   else:
-    for input_payload in normalized_input_payloads:
-      input_payloads.append(
-          input_payload * batch_size * num_alive_inputs)
+    input_payloads.extend(input_payload * batch_size * num_alive_inputs
+                          for input_payload in normalized_input_payloads)
     for output_payload in normalized_output_payloads:
       output_payloads.append(
           output_payload * batch_size * num_alive_outputs)
@@ -337,8 +332,7 @@ def latency_function_factory(hardware, batch_size):
   """
   assert batch_size > 0
   if hardware not in PEAK_COMPUTE:
-    raise ValueError(
-        'Hardware %s must be in %s' % (hardware, PEAK_COMPUTE.keys()))
+    raise ValueError(f'Hardware {hardware} must be in {PEAK_COMPUTE.keys()}')
   # Create latency_function with hardware specifications.
   def latency_function_for_hardware(
       op, is_regularization, num_alive_inputs, num_alive_outputs, reg_inputs,
@@ -410,9 +404,7 @@ def activation_count_function(op, is_regularization, num_alive_inputs,
   del batch_size  # Unused.
   if not is_flop_op(op):
     return 0.0
-  if is_regularization:
-    return reg_outputs
-  return num_alive_outputs
+  return reg_outputs if is_regularization else num_alive_outputs
 
 
 def _shape_with_dtype(tensor):
@@ -430,7 +422,7 @@ def _shape_with_dtype(tensor):
 def is_flop_op(op):
   """Returns True if op consumes significant FLOPs to evaluate."""
   if not isinstance(op, tf.Operation):
-    raise ValueError('conv_op must be a tf.Operation, not %s' % type(op))
+    raise ValueError(f'conv_op must be a tf.Operation, not {type(op)}')
   return op.type in cost_calculator.FLOP_OPS
 
 

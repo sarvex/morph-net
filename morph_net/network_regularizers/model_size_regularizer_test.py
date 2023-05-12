@@ -28,7 +28,7 @@ class GammaModelSizeDecoratedTest(parameterized.TestCase, tf.test.TestCase):
       return self.gamma_flop_reg.get_regularization_term(conv).eval()
 
   def get_conv(self, name):
-    return tf.get_default_graph().get_operation_by_name(name + '/Conv2D')
+    return tf.get_default_graph().get_operation_by_name(f'{name}/Conv2D')
 
   def testLossCostDecorated(self):
     params = {'trainable': True, 'normalizer_fn': slim.batch_norm,

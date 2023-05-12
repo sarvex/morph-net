@@ -33,7 +33,7 @@ class ConvsSourceOpHandlerTest(parameterized.TestCase, tf.test.TestCase):
     g = tf.get_default_graph()
 
     # Declare OpSlice and OpGroup for ops of interest.
-    self.conv1_op = g.get_operation_by_name('conv1/' + conv_type)
+    self.conv1_op = g.get_operation_by_name(f'conv1/{conv_type}')
     self.conv1_op_slice = orm.OpSlice(self.conv1_op, orm.Slice(0, 5))
     self.conv1_op_group = orm.OpGroup(
         self.conv1_op_slice, omit_source_op_slices=[self.conv1_op_slice])
@@ -43,7 +43,7 @@ class ConvsSourceOpHandlerTest(parameterized.TestCase, tf.test.TestCase):
     self.relu1_op_group = orm.OpGroup(
         self.relu1_op_slice, omit_source_op_slices=[self.relu1_op_slice])
 
-    self.conv2_op = g.get_operation_by_name('conv2/' + conv_type)
+    self.conv2_op = g.get_operation_by_name(f'conv2/{conv_type}')
     self.conv2_op_slice = orm.OpSlice(self.conv2_op, orm.Slice(0, 6))
     self.conv2_op_group = orm.OpGroup(
         self.conv2_op_slice, omit_source_op_slices=[self.conv2_op_slice])

@@ -57,14 +57,11 @@ class BatchNormSourceOpHandler(grouping_op_handler.GroupingOpHandler):
     size = op_slice.slice.size
     gamma = op_slice.op.inputs[1]  # Input 1 is gamma.
 
-    # If OpSlice size matches tensor size, use the entire tensor.  Otherwise,
-    # slice the tensor accordingly.
     if start_index == 0 and size == gamma.shape.as_list()[-1]:
       return gamma_l1_regularizer.GammaL1Regularizer(
           gamma, self._gamma_threshold)
-    else:
-      # Note: this conversion is also attempted inside GammaL1Regularizer
-      # because it may be invoked from another call site.
-      gamma = tpu_util.maybe_convert_to_variable(gamma)
-      return gamma_l1_regularizer.GammaL1Regularizer(
-          gamma[start_index:start_index + size], self._gamma_threshold)
+    # Note: this conversion is also attempted inside GammaL1Regularizer
+    # because it may be invoked from another call site.
+    gamma = tpu_util.maybe_convert_to_variable(gamma)
+    return gamma_l1_regularizer.GammaL1Regularizer(
+        gamma[start_index:start_index + size], self._gamma_threshold)

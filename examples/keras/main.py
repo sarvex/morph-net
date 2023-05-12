@@ -168,8 +168,7 @@ def main():
     print("*" * 100)
     print("Initial Model Cost: {:.1f}".format(initial_cost))
     morphnet_regularization_strength = 1.0 / initial_cost * morphnet_regularization_multiplier
-    print("Use Regularization Strength: {}".format(
-        morphnet_regularization_strength))
+    print(f"Use Regularization Strength: {morphnet_regularization_strength}")
     model.set_morphnet_regularization_strength(
         morphnet_regularization_strength=morphnet_regularization_strength)
     print("*" * 100)

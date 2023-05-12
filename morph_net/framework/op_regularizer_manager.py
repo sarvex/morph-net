@@ -26,7 +26,7 @@ ITERATION_LIMIT = 1000000
 class OpSlice(collections.namedtuple('OpSlice', ['op', 'slice'])):
 
   def __str__(self):
-    return '{} {}'.format(self.op.name, self.slice)
+    return f'{self.op.name} {self.slice}'
 
   __repr__ = __str__
 
@@ -37,7 +37,7 @@ class OpSlice(collections.namedtuple('OpSlice', ['op', 'slice'])):
 class Slice(collections.namedtuple('Slice', ['start_index', 'size'])):
 
   def __str__(self):
-    return '({}, {})'.format(self.start_index, self.size)
+    return f'({self.start_index}, {self.size})'
 
   __repr__ = __str__
 
@@ -133,8 +133,9 @@ class OpRegularizerManager(object):
     if iteration_count >= iteration_limit:
       # OpRegularizerManager got stuck in a loop.  Report the ops still in the
       # processing queue.
-      raise RuntimeError('OpRegularizerManager could not handle ops: %s' %
-                         ['%s (%s)' % (o.name, o.type) for o in self._op_deque])
+      raise RuntimeError(
+          f"OpRegularizerManager could not handle ops: {[f'{o.name} ({o.type})' for o in self._op_deque]}"
+      )
 
     # Force-group ops.
     force_group = force_group or []
@@ -338,11 +339,12 @@ class OpRegularizerManager(object):
       aligned_op_slice_sizes = op_handler_util.get_aligned_sizes(
           [old_op_slice_sizes, sizes])
     except ValueError as e:
-      raise ValueError('Error with op: %s: %s' % (op.name, e.args[0]))
+      raise ValueError(f'Error with op: {op.name}: {e.args[0]}')
 
     if sizes != aligned_op_slice_sizes:
-      raise ValueError('Cannot slice op %s from sizes %s to %s' %
-                       (op.name, old_op_slice_sizes, sizes))
+      raise ValueError(
+          f'Cannot slice op {op.name} from sizes {old_op_slice_sizes} to {sizes}'
+      )
 
     # Iterate through slices to find old slices that need to be resliced.
     old_slice_index = 0
@@ -364,7 +366,7 @@ class OpRegularizerManager(object):
           else:
             # If OpSlice has no group, just use the OpSlice itself.
             group_op_slices = [old_op_slices[old_slice_index]]
-          new_op_slice_group = [list() for _ in range(new_slice_count)]
+          new_op_slice_group = [[] for _ in range(new_slice_count)]
           for group_op_slice in group_op_slices:
             self._slice_op_slice(group_op_slice, sizes, new_slice_index,
                                  new_slice_count, new_op_slice_group)
@@ -595,10 +597,7 @@ class OpRegularizerManager(object):
         dependency that does not involve ops from input_boundary.
       input_boundary: A list of ops where traversal should terminate.
     """
-    if input_boundary:
-      input_boundary = set(input_boundary)
-    else:
-      input_boundary = set()
+    input_boundary = set(input_boundary) if input_boundary else set()
     to_visit = list(output_boundary)
     visited = set()
     while to_visit:
@@ -627,11 +626,10 @@ class OpRegularizerManager(object):
         their groups merged.
     """
     for regex in force_group:
-      force_group_ops = []
-      for op, op_slices in self._op_slice_dict.items():
-        if op_handler_util.group_match(regex, op_slices):
-          force_group_ops.append(op)
-
+      force_group_ops = [
+          op for op, op_slices in self._op_slice_dict.items()
+          if op_handler_util.group_match(regex, op_slices)
+      ]
       # If no ops match, continue to the next force-group.
       if not force_group_ops:
         raise ValueError('Regex \'%s\' did not match any ops.')
@@ -639,20 +637,20 @@ class OpRegularizerManager(object):
       # Assert all ops to force-group have only 1 OpSlice.
       if ([len(self._op_slice_dict[op]) for op in force_group_ops] !=
           [1] * len(force_group_ops)):
-        multiple_slice_ops = []
-        for op in force_group_ops:
-          if len(self._op_slice_dict[op]) != 1:
-            multiple_slice_ops.append(op.name)
-        raise ValueError('Cannot force-group ops with more than 1 OpSlice: %s' %
-                         multiple_slice_ops)
+        multiple_slice_ops = [
+            op.name for op in force_group_ops
+            if len(self._op_slice_dict[op]) != 1
+        ]
+        raise ValueError(
+            f'Cannot force-group ops with more than 1 OpSlice: {multiple_slice_ops}'
+        )
 
       # Assert all ops to force-group have the same size.
       target_op_size = self._op_slice_dict[force_group_ops[0]][0].slice.size
       if ([self._op_slice_dict[op][0].slice.size for op in force_group_ops] !=
           [target_op_size] * len(force_group_ops)):
         op_names = [op.name for op in force_group_ops]
-        raise ValueError(
-            'Cannot force-group ops with different sizes: %s' % op_names)
+        raise ValueError(f'Cannot force-group ops with different sizes: {op_names}')
 
       # Group the ops.
       self.group_op_slices(

@@ -74,7 +74,7 @@ class GammaFlopsTest(parameterized.TestCase, tf.test.TestCase):
         input_boundary=input_boundary)
 
   def GetConv(self, name):
-    return tf.get_default_graph().get_operation_by_name(name + '/Conv2D')
+    return tf.get_default_graph().get_operation_by_name(f'{name}/Conv2D')
 
   def Init(self):
     tf.global_variables_initializer().run()
@@ -282,9 +282,7 @@ class GammaFlopsWithDepthwiseConvTestBase(tf.test.TestCase):
         concat, 29, [3, 3], stride=2, padding='SAME', scope='conv3')
     self.name_to_var = {v.op.name: v for v in tf.global_variables()}
 
-    regularizer_blacklist = None
-    if self._depthwise_use_batchnorm:
-      regularizer_blacklist = ['dw1']
+    regularizer_blacklist = ['dw1'] if self._depthwise_use_batchnorm else None
     self.gamma_flop_reg = flop_regularizer.GammaFlopsRegularizer(
         [self.conv3.op], gamma_threshold=0.45,
         regularizer_blacklist=regularizer_blacklist)
@@ -517,16 +515,16 @@ class GammaFlopResidualConnectionsLossTest(tf.test.TestCase):
 
   def GetGamma(self, short_name):
     tokens = short_name.split('/')
-    name = ('resnet_v1/block1/' + tokens[0] + '/bottleneck_v1/' + tokens[1] +
-            '/BatchNorm/gamma')
+    name = (
+        f'resnet_v1/block1/{tokens[0]}/bottleneck_v1/{tokens[1]}/BatchNorm/gamma'
+    )
     return self._gammas[name]
 
   def GetOp(self, short_name):
     if short_name == 'FC':
       return tf.get_default_graph().get_operation_by_name('FC/MatMul')
     tokens = short_name.split('/')
-    name = ('resnet_v1/block1/' + tokens[0] + '/bottleneck_v1/' + tokens[1] +
-            '/Conv2D')
+    name = f'resnet_v1/block1/{tokens[0]}/bottleneck_v1/{tokens[1]}/Conv2D'
     return tf.get_default_graph().get_operation_by_name(name)
 
   def NumAlive(self, short_name):
@@ -547,9 +545,10 @@ class GammaFlopResidualConnectionsLossTest(tf.test.TestCase):
     self.gamma_flop_reg = flop_regularizer.GammaFlopsRegularizer(
         [self.net.op], self._threshold)
 
-    expected = {}
-    expected['unit_1/shortcut'] = (
-        self.GetCoeff('unit_1/shortcut') * np.sum(res_alive) * NUM_CHANNELS)
+    expected = {
+        'unit_1/shortcut':
+        self.GetCoeff('unit_1/shortcut') * np.sum(res_alive) * NUM_CHANNELS
+    }
     expected['unit_1/conv1'] = (
         self.GetCoeff('unit_1/conv1') * self.NumAlive('unit_1/conv1') *
         NUM_CHANNELS)

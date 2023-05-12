@@ -227,11 +227,7 @@ class ResnetUtilsTest(tf.test.TestCase):
               output = resnet_utils.stack_blocks_dense(inputs,
                                                        blocks,
                                                        output_stride)
-              if output_stride is None:
-                factor = 1
-              else:
-                factor = nominal_stride // output_stride
-
+              factor = 1 if output_stride is None else nominal_stride // output_stride
               output = resnet_utils.subsample(output, factor)
               # Make the two networks use the same weights.
               tf.get_variable_scope().reuse_variables()
@@ -385,12 +381,13 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
     expected = ['resnet/conv1']
     for block in range(1, 5):
       for unit in range(1, 4 if block < 4 else 3):
-        for conv in range(1, 4):
-          expected.append('resnet/block%d/unit_%d/bottleneck_v1/conv%d' %
-                          (block, unit, conv))
+        expected.extend('resnet/block%d/unit_%d/bottleneck_v1/conv%d' %
+                        (block, unit, conv) for conv in range(1, 4))
         expected.append('resnet/block%d/unit_%d/bottleneck_v1' % (block, unit))
-      expected.append('resnet/block%d/unit_1/bottleneck_v1/shortcut' % block)
-      expected.append('resnet/block%d' % block)
+      expected.extend((
+          'resnet/block%d/unit_1/bottleneck_v1/shortcut' % block,
+          'resnet/block%d' % block,
+      ))
     expected.extend(['global_pool', 'resnet/logits', 'resnet/spatial_squeeze',
                      'predictions'])
     self.assertItemsEqual(list(end_points.keys()), expected)
@@ -408,8 +405,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block2': [2, 14, 14, 8],
           'resnet/block3': [2, 7, 7, 16],
           'resnet/block4': [2, 7, 7, 32]}
-      for endpoint in endpoint_to_shape:
-        shape = endpoint_to_shape[endpoint]
+      for endpoint, shape in endpoint_to_shape.items():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
   def testFullyConvolutionalEndpointShapes(self):
@@ -426,8 +422,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block2': [2, 21, 21, 8],
           'resnet/block3': [2, 11, 11, 16],
           'resnet/block4': [2, 11, 11, 32]}
-      for endpoint in endpoint_to_shape:
-        shape = endpoint_to_shape[endpoint]
+      for endpoint, shape in endpoint_to_shape.items():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
   def testRootlessFullyConvolutionalEndpointShapes(self):
@@ -445,8 +440,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block2': [2, 32, 32, 8],
           'resnet/block3': [2, 16, 16, 16],
           'resnet/block4': [2, 16, 16, 32]}
-      for endpoint in endpoint_to_shape:
-        shape = endpoint_to_shape[endpoint]
+      for endpoint, shape in endpoint_to_shape.items():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
   def testAtrousFullyConvolutionalEndpointShapes(self):
@@ -466,8 +460,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block2': [2, 41, 41, 8],
           'resnet/block3': [2, 41, 41, 16],
           'resnet/block4': [2, 41, 41, 32]}
-      for endpoint in endpoint_to_shape:
-        shape = endpoint_to_shape[endpoint]
+      for endpoint, shape in endpoint_to_shape.items():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
   def testAtrousFullyConvolutionalValues(self):
@@ -483,10 +476,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
             output, _ = self._resnet_small(inputs, None, is_training=False,
                                            global_pool=False,
                                            output_stride=output_stride)
-            if output_stride is None:
-              factor = 1
-            else:
-              factor = nominal_stride // output_stride
+            factor = 1 if output_stride is None else nominal_stride // output_stride
             output = resnet_utils.subsample(output, factor)
             # Make the two networks use the same weights.
             tf.get_variable_scope().reuse_variables()
@@ -559,20 +549,20 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
     resnet_names = [
         'resnet_v1_50', 'resnet_v1_101', 'resnet_v1_152', 'resnet_v1_200'
     ]
+    depth_multiplier = 0.25
+    global_pool = True
+    num_classes = 10
     for resnet, resnet_name in zip(resnets, resnet_names):
-      depth_multiplier = 0.25
-      global_pool = True
-      num_classes = 10
       inputs = create_test_input(2, 224, 224, 3)
       with slim.arg_scope(resnet_utils.resnet_arg_scope()):
-        scope_base = resnet_name + '_base'
+        scope_base = f'{resnet_name}_base'
         _, end_points_base = resnet(
             inputs,
             num_classes,
             global_pool=global_pool,
             min_base_depth=1,
             scope=scope_base)
-        scope_test = resnet_name + '_test'
+        scope_test = f'{resnet_name}_test'
         _, end_points_test = resnet(
             inputs,
             num_classes,
@@ -581,8 +571,8 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
             depth_multiplier=depth_multiplier,
             scope=scope_test)
         for block in ['block1', 'block2', 'block3', 'block4']:
-          block_name_base = scope_base + '/' + block
-          block_name_test = scope_test + '/' + block
+          block_name_base = f'{scope_base}/{block}'
+          block_name_test = f'{scope_test}/{block}'
           self.assertTrue(block_name_base in end_points_base)
           self.assertTrue(block_name_test in end_points_test)
           self.assertEqual(
@@ -605,10 +595,10 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
     resnet_names = [
         'resnet_v1_50', 'resnet_v1_101', 'resnet_v1_152', 'resnet_v1_200'
     ]
+    min_base_depth = 5
+    global_pool = True
+    num_classes = 10
     for resnet, resnet_name in zip(resnets, resnet_names):
-      min_base_depth = 5
-      global_pool = True
-      num_classes = 10
       inputs = create_test_input(2, 224, 224, 3)
       with slim.arg_scope(resnet_utils.resnet_arg_scope()):
         _, end_points = resnet(
@@ -619,7 +609,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
             depth_multiplier=0,
             scope=resnet_name)
         for block in ['block1', 'block2', 'block3', 'block4']:
-          block_name = resnet_name + '/' + block
+          block_name = f'{resnet_name}/{block}'
           self.assertTrue(block_name in end_points)
           self.assertEqual(
               len(end_points[block_name].get_shape().as_list()), 4)

@@ -181,10 +181,10 @@ def resnet_v2(inputs,
     ValueError: If the target output_stride is not valid.
   """
   with tf.variable_scope(scope, 'resnet_v2', [inputs], reuse=reuse) as sc:
-    end_points_collection = sc.original_name_scope + '_end_points'
+    end_points_collection = f'{sc.original_name_scope}_end_points'
     with slim.arg_scope([slim.conv2d, bottleneck,
-                         resnet_utils.stack_blocks_dense],
-                        outputs_collections=end_points_collection):
+                             resnet_utils.stack_blocks_dense],
+                            outputs_collections=end_points_collection):
       with slim.arg_scope([slim.batch_norm], is_training=is_training):
         net = inputs
         if include_root_block:
@@ -215,10 +215,10 @@ def resnet_v2(inputs,
         if num_classes:
           net = slim.conv2d(net, num_classes, [1, 1], activation_fn=None,
                             normalizer_fn=None, scope='logits')
-          end_points[sc.name + '/logits'] = net
+          end_points[f'{sc.name}/logits'] = net
           if spatial_squeeze:
             net = tf.squeeze(net, [1, 2], name='SpatialSqueeze')
-            end_points[sc.name + '/spatial_squeeze'] = net
+            end_points[f'{sc.name}/spatial_squeeze'] = net
           end_points['predictions'] = slim.softmax(net, scope='predictions')
         return net, end_points
 resnet_v2.default_image_size = 224

@@ -50,7 +50,7 @@ class ActivationLossTest(parameterized.TestCase, tf.test.TestCase):
             [self.conv3.op, self.conv4.op], gamma_threshold=0.45))
 
   def get_conv(self, name):
-    return tf.get_default_graph().get_operation_by_name(name +  '/Conv2D')
+    return tf.get_default_graph().get_operation_by_name(f'{name}/Conv2D')
 
   def init(self):
     tf.global_variables_initializer().run()
@@ -72,7 +72,7 @@ class ActivationLossTest(parameterized.TestCase, tf.test.TestCase):
       try:
         return self.gamma_activation_reg.get_regularization_term(conv).eval()
       except AttributeError:
-        print (str(conv))
+        print(conv)
         print ('getloss', self.gamma_activation_reg.get_regularization_term(
             conv))
 

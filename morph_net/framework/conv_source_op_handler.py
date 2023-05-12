@@ -27,6 +27,6 @@ class ConvSourceOpHandler(
     elif op.type == 'Conv3D':
       return (0, 1, 2, 3)
     else:
-      raise ValueError('Unsupported op type %s' % op.type)
+      raise ValueError(f'Unsupported op type {op.type}')
 
 Conv2DSourceOpHandler = ConvSourceOpHandler

@@ -95,10 +95,10 @@ class OpRegularizerManagerTest(parameterized.TestCase, tf.test.TestCase):
     op_reg_manager = orm.OpRegularizerManager([final_op], op_handler_dict)
 
     expected_alive = model_stub.expected_alive()
-    conv_reg = op_reg_manager.get_regularizer(_get_op(scope + '/Conv2D'))
+    conv_reg = op_reg_manager.get_regularizer(_get_op(f'{scope}/Conv2D'))
     self.assertAllEqual(expected_alive[scope], conv_reg.alive_vector)
 
-    relu_reg = op_reg_manager.get_regularizer(_get_op(scope + '/Relu'))
+    relu_reg = op_reg_manager.get_regularizer(_get_op(f'{scope}/Relu'))
     self.assertAllEqual(expected_alive[scope], relu_reg.alive_vector)
 
   @parameterized.named_parameters(('Batch_no_par', True, False),
@@ -245,17 +245,19 @@ class OpRegularizerManagerTest(parameterized.TestCase, tf.test.TestCase):
     grouped_names = [
         [op_slice.op.name for op_slice in group.op_slices]
         for group in op_reg_manager._op_group_dict.values()]
-    expected = set([
-        'conv/second/Conv2D', 'Add/second', 'conv/first/Conv2D',
-        'conv/input/Conv2D', 'Add/first'
-    ])
+    expected = {
+        'conv/second/Conv2D',
+        'Add/second',
+        'conv/first/Conv2D',
+        'conv/input/Conv2D',
+        'Add/first',
+    }
     groups = []
     for group in grouped_names:
-      filtered = []
-      for op_name in group:
-        if '/Conv2D' in op_name or 'Add/' in op_name:
-          filtered.append(op_name)
-      if filtered:
+      if filtered := [
+          op_name for op_name in group
+          if '/Conv2D' in op_name or 'Add/' in op_name
+      ]:
         groups.append(set(filtered))
         if DEBUG_PRINTS:
           print('Group Found = ', filtered)
@@ -778,7 +780,8 @@ class OpRegularizerManagerTest(parameterized.TestCase, tf.test.TestCase):
     # regularizertion_vector.
     self.assertAllEqual(
         manager.get_regularizer(c1.op).regularization_vector,
-        manager.get_regularizer(out.op).regularization_vector[0:10])
+        manager.get_regularizer(out.op).regularization_vector[:10],
+    )
     self.assertAllEqual(
         manager.get_regularizer(c2.op).regularization_vector,
         manager.get_regularizer(out.op).regularization_vector[10:20])
@@ -850,7 +853,8 @@ class OpRegularizerManagerTest(parameterized.TestCase, tf.test.TestCase):
     # regularizertion_vector.
     self.assertAllEqual(
         manager.get_regularizer(c1.op).regularization_vector,
-        manager.get_regularizer(concat.op).regularization_vector[0:10])
+        manager.get_regularizer(concat.op).regularization_vector[:10],
+    )
     self.assertAllEqual(
         manager.get_regularizer(c2.op).regularization_vector,
         manager.get_regularizer(concat.op).regularization_vector[10:20])
@@ -1603,7 +1607,7 @@ class OpRegularizerManagerTest(parameterized.TestCase, tf.test.TestCase):
     sizes = [2, 1, 3, 2, 2]
     size_index = 1
     size_count = 3
-    new_op_slice_group = [list() for _ in range(size_count)]
+    new_op_slice_group = [[] for _ in range(size_count)]
     manager._slice_op_slice(op_slice2, sizes, size_index, size_count,
                             new_op_slice_group)
 
@@ -1823,7 +1827,7 @@ class OpRegularizerManagerTest(parameterized.TestCase, tf.test.TestCase):
     # All ops are in the same group
     group = list(op_reg_manager._op_group_dict.values())[0]
     source_op_names = [s.op.name for s in group.source_op_slices]
-    self.assertSetEqual(set(['bn0/FusedBatchNormV3', 'bn1/FusedBatchNormV3']),
+    self.assertSetEqual({'bn0/FusedBatchNormV3', 'bn1/FusedBatchNormV3'},
                         set(source_op_names))
 
   def testPrintOpSlices(self):
@@ -2000,7 +2004,7 @@ def _stub_create_regularizer(op_slice, model_stub):
       return StubOpRegularizer(
           model_stub.REG_STUB[key][start_index:start_index + size],
           model_stub.ALIVE_STUB[key][start_index:start_index + size])
-  raise ValueError('No regularizer for %s' % op.name)
+  raise ValueError(f'No regularizer for {op.name}')
 
 
 class StubOpRegularizer(generic_regularizers.OpRegularizer):

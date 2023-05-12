@@ -130,7 +130,4 @@ def lazy_square(tensor):
   Returns:
     The square of the input tensor.
   """
-  if tensor.op.type == 'Sqrt':
-    return tensor.op.inputs[0]
-  else:
-    return tf.square(tensor)
+  return tensor.op.inputs[0] if tensor.op.type == 'Sqrt' else tf.square(tensor)

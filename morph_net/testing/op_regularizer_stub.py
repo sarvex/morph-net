@@ -61,7 +61,7 @@ class OpRegularizerStubFactory(object):
     for key in self._reg_stub:
       if conv_op.name.startswith(key):
         return self._create_stub(key)
-    raise ValueError('No regularizer for %s' % conv_op.name)
+    raise ValueError(f'No regularizer for {conv_op.name}')
 
 
 def image_stub():

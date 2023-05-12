@@ -21,8 +21,7 @@ class ActivationGatingTest(parameterized.TestCase, tf.test.TestCase):
 
   def _build_activation(self):
     activation_shape = [1, 17, 19, 4]
-    activation = tf.ones(shape=activation_shape)
-    return activation
+    return tf.ones(shape=activation_shape)
 
   def test_no_trainable(self):
     activation = self._build_activation()

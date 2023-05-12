@@ -30,12 +30,10 @@ def test_combinations(log_dir="./morphnet_log",
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
-    fhand = open(os.path.join(log_dir, csv_filename), "w")
-    fhand.write(
-        "base_model,morphnet_regularizer_algorithm,morphnet_target_cost,morphnet_hardware,success\n"
-    )
-    fhand.close()
-
+    with open(os.path.join(log_dir, csv_filename), "w") as fhand:
+        fhand.write(
+            "base_model,morphnet_regularizer_algorithm,morphnet_target_cost,morphnet_hardware,success\n"
+        )
     successes = []
     failures = []
 
@@ -65,9 +63,8 @@ def test_combinations(log_dir="./morphnet_log",
                 morphnet_target_cost_choices, morphnet_hardware_choices):
 
             print(
-                "Testing MorphNet Algorithm Combinations [{}, {}, {}, {}] ...".
-                format(base_model, morphnet_regularizer_algorithm,
-                       morphnet_target_cost, morphnet_hardware))
+                f"Testing MorphNet Algorithm Combinations [{base_model}, {morphnet_regularizer_algorithm}, {morphnet_target_cost}, {morphnet_hardware}] ..."
+            )
             shell_command = "python morphnet_model_zoo.py --num-epochs {num_epoch} --num-classes {num_classes} --batch-size {batch_size} --learning-rate {learning_rate} --base-model-name {base_model_name} --morphnet-regularizer-algorithm {morphnet_regularizer_algorithm} --morphnet-target-cost {morphnet_target_cost} --morphnet-hardware {morphnet_hardware} --morphnet-regularizer-threshold {morphnet_regularizer_threshold} --morphnet-regularization-multiplier {morphnet_regularization_multiplier} --log-dir {log_dir} --num-cuda-device {num_cuda_device}".format(
                 num_epoch=num_epochs_default,
                 num_classes=num_classes_default,
@@ -92,16 +89,16 @@ def test_combinations(log_dir="./morphnet_log",
                                          stderr=subprocess.PIPE)
                 successes.append((base_model, morphnet_regularizer_algorithm,
                                   morphnet_target_cost, morphnet_hardware))
-                fhand.write("{},{},{},{},{}\n".format(
-                    base_model, morphnet_regularizer_algorithm,
-                    morphnet_target_cost, morphnet_hardware, "True"))
+                fhand.write(
+                    f"{base_model},{morphnet_regularizer_algorithm},{morphnet_target_cost},{morphnet_hardware},True\n"
+                )
                 print("Trial Successful!")
             except subprocess.CalledProcessError as exception:
                 failures.append((base_model, morphnet_regularizer_algorithm,
                                  morphnet_target_cost, morphnet_hardware))
-                fhand.write("{},{},{},{},{}\n".format(
-                    base_model, morphnet_regularizer_algorithm,
-                    morphnet_target_cost, morphnet_hardware, "False"))
+                fhand.write(
+                    f"{base_model},{morphnet_regularizer_algorithm},{morphnet_target_cost},{morphnet_hardware},False\n"
+                )
                 print("Trial Failed!")
                 print(exception.stderr)
 

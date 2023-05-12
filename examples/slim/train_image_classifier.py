@@ -279,8 +279,9 @@ def _configure_learning_rate(num_samples_per_epoch, global_step):
                                      cycle=False,
                                      name='polynomial_decay_learning_rate')
   else:
-    raise ValueError('learning_rate_decay_type [%s] was not recognized' %
-                     FLAGS.learning_rate_decay_type)
+    raise ValueError(
+        f'learning_rate_decay_type [{FLAGS.learning_rate_decay_type}] was not recognized'
+    )
 
 
 def _configure_optimizer(learning_rate):
@@ -331,7 +332,7 @@ def _configure_optimizer(learning_rate):
   elif FLAGS.optimizer == 'sgd':
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
   else:
-    raise ValueError('Optimizer [%s] was not recognized' % FLAGS.optimizer)
+    raise ValueError(f'Optimizer [{FLAGS.optimizer}] was not recognized')
   return optimizer
 
 
@@ -351,8 +352,8 @@ def _get_init_fn():
   # ignoring the checkpoint anyway.
   if tf.train.latest_checkpoint(FLAGS.train_dir):
     tf.logging.info(
-        'Ignoring --checkpoint_path because a checkpoint already exists in %s'
-        % FLAGS.train_dir)
+        f'Ignoring --checkpoint_path because a checkpoint already exists in {FLAGS.train_dir}'
+    )
     return None
 
   exclusions = []
@@ -374,7 +375,7 @@ def _get_init_fn():
   else:
     checkpoint_path = FLAGS.checkpoint_path
 
-  tf.logging.info('Fine-tuning from %s' % checkpoint_path)
+  tf.logging.info(f'Fine-tuning from {checkpoint_path}')
 
   return slim.assign_from_checkpoint_fn(
       checkpoint_path,
@@ -440,8 +441,8 @@ def mn_train_step(sess, train_op, global_step, train_step_kwargs):
 
   if (np_global_step % 1000 == 0):
     train_op[1].populate_tensor_values(structure_exporter_tensors)
-    train_op[1].create_file_and_save_alive_counts(FLAGS.train_dir+"/ee", 
-                                                    np_global_step)
+    train_op[1].create_file_and_save_alive_counts(f"{FLAGS.train_dir}/ee",
+                                                  np_global_step)
 
   if run_metadata is not None:
     tl = timeline.Timeline(run_metadata.step_stats)
@@ -454,10 +455,10 @@ def mn_train_step(sess, train_op, global_step, train_step_kwargs):
       train_step_kwargs['summary_writer'].add_run_metadata(
           run_metadata, 'run_metadata-%d' % np_global_step)
 
-  if 'should_log' in train_step_kwargs:
-    if sess.run(train_step_kwargs['should_log']):
-      logging.info('global step %d: loss = %.4f (%.3f sec/step)',
-                   np_global_step, total_loss, time_elapsed)
+  if 'should_log' in train_step_kwargs and sess.run(
+      train_step_kwargs['should_log']):
+    logging.info('global step %d: loss = %.4f (%.3f sec/step)',
+                 np_global_step, total_loss, time_elapsed)
 
   if 'should_stop' in train_step_kwargs:
     should_stop = sess.run(train_step_kwargs['should_stop'])
@@ -578,9 +579,9 @@ def main(_):
     end_points = clones[0].outputs
     for end_point in end_points:
       x = end_points[end_point]
-      summaries.add(tf.summary.histogram('activations/' + end_point, x))
-      summaries.add(tf.summary.scalar('sparsity/' + end_point,
-                                      tf.nn.zero_fraction(x)))
+      summaries.add(tf.summary.histogram(f'activations/{end_point}', x))
+      summaries.add(
+          tf.summary.scalar(f'sparsity/{end_point}', tf.nn.zero_fraction(x)))
 
     summaries.add(tf.summary.scalar('RegularizationLoss', clones[0].reg_loss))
     summaries.add(tf.summary.scalar(clones[0].network_regularizer.cost_name, 
@@ -588,7 +589,7 @@ def main(_):
 
     # Add summaries for losses.
     for loss in tf.get_collection(tf.GraphKeys.LOSSES, first_clone_scope):
-      summaries.add(tf.summary.scalar('losses/%s' % loss.op.name, loss))
+      summaries.add(tf.summary.scalar(f'losses/{loss.op.name}', loss))
 
     # Add summaries for variables.
     for variable in slim.get_model_variables():
@@ -655,7 +656,7 @@ def main(_):
     update_op = tf.group(*update_ops)
     with tf.control_dependencies([update_op]):
       train_tensor = tf.identity(total_loss, name='train_op')
-    
+
     train_list = [train_tensor, exporter]
 
     # Add the summaries from the first clone. These contain the summaries

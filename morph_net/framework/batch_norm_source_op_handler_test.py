@@ -337,8 +337,7 @@ class BatchNormSourceOpHandlerTest(tf.test.TestCase):
       init.run()
 
       # Verify regularizer is the sliced gamma tensor.
-      self.assertAllEqual(gamma_tensor.eval()[0:3],
-                          regularizer._gamma.eval())
+      self.assertAllEqual(gamma_tensor.eval()[:3], regularizer._gamma.eval())
 
 
 if __name__ == '__main__':

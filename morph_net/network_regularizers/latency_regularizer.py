@@ -91,7 +91,7 @@ class LogisticSigmoidLatencyRegularizer(
 
   @property
   def cost_name(self):
-    return self._hardware + ' Latency'
+    return f'{self._hardware} Latency'
 
 
 class GammaLatencyRegularizer(generic_regularizers.NetworkRegularizer):
@@ -174,7 +174,7 @@ class GammaLatencyRegularizer(generic_regularizers.NetworkRegularizer):
 
   @property
   def cost_name(self):
-    return self._hardware + ' Latency'
+    return f'{self._hardware} Latency'
 
 
 class GroupLassoLatencyRegularizer(generic_regularizers.NetworkRegularizer):
@@ -262,4 +262,4 @@ class GroupLassoLatencyRegularizer(generic_regularizers.NetworkRegularizer):
 
   @property
   def cost_name(self):
-    return self._hardware + ' Latency'
+    return f'{self._hardware} Latency'

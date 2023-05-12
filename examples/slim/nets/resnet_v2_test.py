@@ -226,11 +226,7 @@ class ResnetUtilsTest(tf.test.TestCase):
               output = resnet_utils.stack_blocks_dense(inputs,
                                                        blocks,
                                                        output_stride)
-              if output_stride is None:
-                factor = 1
-              else:
-                factor = nominal_stride // output_stride
-
+              factor = 1 if output_stride is None else nominal_stride // output_stride
               output = resnet_utils.subsample(output, factor)
               # Make the two networks use the same weights.
               tf.get_variable_scope().reuse_variables()
@@ -301,12 +297,13 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
     expected = ['resnet/conv1']
     for block in range(1, 5):
       for unit in range(1, 4 if block < 4 else 3):
-        for conv in range(1, 4):
-          expected.append('resnet/block%d/unit_%d/bottleneck_v2/conv%d' %
-                          (block, unit, conv))
+        expected.extend('resnet/block%d/unit_%d/bottleneck_v2/conv%d' %
+                        (block, unit, conv) for conv in range(1, 4))
         expected.append('resnet/block%d/unit_%d/bottleneck_v2' % (block, unit))
-      expected.append('resnet/block%d/unit_1/bottleneck_v2/shortcut' % block)
-      expected.append('resnet/block%d' % block)
+      expected.extend((
+          'resnet/block%d/unit_1/bottleneck_v2/shortcut' % block,
+          'resnet/block%d' % block,
+      ))
     expected.extend(['global_pool', 'resnet/logits', 'resnet/spatial_squeeze',
                      'predictions'])
     self.assertItemsEqual(end_points.keys(), expected)
@@ -324,8 +321,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block2': [2, 14, 14, 8],
           'resnet/block3': [2, 7, 7, 16],
           'resnet/block4': [2, 7, 7, 32]}
-      for endpoint in endpoint_to_shape:
-        shape = endpoint_to_shape[endpoint]
+      for endpoint, shape in endpoint_to_shape.items():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
   def testFullyConvolutionalEndpointShapes(self):
@@ -342,8 +338,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block2': [2, 21, 21, 8],
           'resnet/block3': [2, 11, 11, 16],
           'resnet/block4': [2, 11, 11, 32]}
-      for endpoint in endpoint_to_shape:
-        shape = endpoint_to_shape[endpoint]
+      for endpoint, shape in endpoint_to_shape.items():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
   def testRootlessFullyConvolutionalEndpointShapes(self):
@@ -361,8 +356,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block2': [2, 32, 32, 8],
           'resnet/block3': [2, 16, 16, 16],
           'resnet/block4': [2, 16, 16, 32]}
-      for endpoint in endpoint_to_shape:
-        shape = endpoint_to_shape[endpoint]
+      for endpoint, shape in endpoint_to_shape.items():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
   def testAtrousFullyConvolutionalEndpointShapes(self):
@@ -382,8 +376,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
           'resnet/block2': [2, 41, 41, 8],
           'resnet/block3': [2, 41, 41, 16],
           'resnet/block4': [2, 41, 41, 32]}
-      for endpoint in endpoint_to_shape:
-        shape = endpoint_to_shape[endpoint]
+      for endpoint, shape in endpoint_to_shape.items():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
   def testAtrousFullyConvolutionalValues(self):
@@ -400,10 +393,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
                                            is_training=False,
                                            global_pool=False,
                                            output_stride=output_stride)
-            if output_stride is None:
-              factor = 1
-            else:
-              factor = nominal_stride // output_stride
+            factor = 1 if output_stride is None else nominal_stride // output_stride
             output = resnet_utils.subsample(output, factor)
             # Make the two networks use the same weights.
             tf.get_variable_scope().reuse_variables()

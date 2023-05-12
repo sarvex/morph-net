@@ -70,12 +70,12 @@ def maybe_convert_to_variable(tensor):
     # No need to convert.
     return tensor
   with tf.variable_scope(
-      # Reset the scope because variable_name contains all the scopes we need.
-      name_or_scope=tf.VariableScope(''),
-      # We are looking for a reference to an existing variable, so we want to
-      # raise an exception if variable is not found.
-      reuse=True,
-  ):
+        # Reset the scope because variable_name contains all the scopes we need.
+        name_or_scope=tf.VariableScope(''),
+        # We are looking for a reference to an existing variable, so we want to
+        # raise an exception if variable is not found.
+        reuse=True,
+    ):
     variable_name = get_variable_name(op)
     tf.logging.info('Converting tensor %s --> variable %s',
                     tensor, variable_name)
@@ -87,7 +87,7 @@ def maybe_convert_to_variable(tensor):
           'Attempting to find it in GLOBAL_VARIABLES collection.',
           variable_name)
     global_vars = tensor.graph.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-    matched_vars = [v for v in global_vars if v.name == variable_name + ':0']
+    matched_vars = [v for v in global_vars if v.name == f'{variable_name}:0']
     if not matched_vars:
       raise ValueError('Variable %s is in GraphDef but not in the live graph.')
     assert len(matched_vars) == 1
@@ -101,7 +101,7 @@ top_level_scope = tf.get_variable_scope()
 def write_to_variable(tensor, fail_if_exists=True):
   """Saves a tensor for later retrieval on CPU."""
   if not isinstance(tensor, tf.Tensor):
-    raise ValueError('Expected tf.Tensor but got {}'.format(type(tensor)))
+    raise ValueError(f'Expected tf.Tensor but got {type(tensor)}')
 
   # Only relevant for debugging.
   debug_name = 'tpu_util__' + tensor.name.split(':')[0]
@@ -124,12 +124,7 @@ def write_to_variable(tensor, fail_if_exists=True):
 
 def read_from_variable(tensor):
   """Retrieves (a possibly stale copy of) the previously stored tensor."""
-  if is_on_cpu():
-    # Stale read, but on CPU that's all we can do without adding to loop vars.
-    return var_store[tensor]
-  else:
-    # Current read, but only works on TPU.
-    return tensor
+  return var_store[tensor] if is_on_cpu() else tensor
 
 
 def is_intermediate_var(v):

@@ -108,7 +108,7 @@ def create_visual_wakeword_annotations(annotations_file,
     labels_to_class_names = {0: 'background', 1: foreground_class_of_interest}
     with open(visualwakewords_labels_filename, 'w') as fp:
       for label in labels_to_class_names:
-        fp.write(str(label) + ':' + str(labels_to_class_names[label]) + '\n')
+        fp.write(f'{str(label)}:{str(labels_to_class_names[label])}' + '\n')
     with open(visualwakewords_annotations_path, 'w') as fp:
       json.dump(
           {
@@ -200,19 +200,17 @@ def create_tf_record_for_visualwakewords_dataset(annotations_file, image_dir,
     output_path: Path to output tf.Record file.
     num_shards: number of output file shards.
   """
-  with contextlib2.ExitStack() as tf_record_close_stack, \
-      tf.gfile.GFile(annotations_file, 'r') as fid:
+  with (contextlib2.ExitStack() as tf_record_close_stack, tf.gfile.GFile(annotations_file, 'r') as fid):
     output_tfrecords = dataset_utils.open_sharded_output_tfrecords(
         tf_record_close_stack, output_path, num_shards)
     groundtruth_data = json.load(fid)
     images = groundtruth_data['images']
 
-    category_index = {}
-    for category in groundtruth_data['categories'].values():
-      # if not background class
-      if category['id'] != 0:
-        category_index[category['id']] = category
-
+    category_index = {
+        category['id']: category
+        for category in groundtruth_data['categories'].values()
+        if category['id'] != 0
+    }
     annotations_index = {}
     if 'annotations' in groundtruth_data:
       tf.logging.info(

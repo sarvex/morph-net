@@ -742,9 +742,7 @@ class ConfigurableOpsTest(parameterized.TestCase, tf.test.TestCase):
   def testDefaultScopes_Conv(
       self, conv_fn, num_outputs_kwarg, expected_op_scope):
     inputs = tf.ones([1, 3, 3, 2])
-    parameterization = {
-        '{}/Conv2D'.format(expected_op_scope): 5
-    }
+    parameterization = {f'{expected_op_scope}/Conv2D': 5}
     decorator = ops.ConfigurableOps(
         parameterization=parameterization, function_dict={'conv2d': conv_fn})
     _ = decorator.conv2d(inputs, **{num_outputs_kwarg: 8, 'kernel_size': 2})
@@ -760,9 +758,7 @@ class ConfigurableOpsTest(parameterized.TestCase, tf.test.TestCase):
   def testDefaultScopes_Dense(
       self, dense_fn, num_outputs_kwarg, expected_op_scope):
     inputs = tf.ones([1, 2])
-    parameterization = {
-        '{}/MatMul'.format(expected_op_scope): 5
-    }
+    parameterization = {f'{expected_op_scope}/MatMul': 5}
     decorator = ops.ConfigurableOps(
         parameterization=parameterization,
         function_dict={'fully_connected': dense_fn})
@@ -923,12 +919,12 @@ class HijackerTest(parameterized.TestCase, tf.test.TestCase):
 
     self.assertLen(decorator.constructed_ops, 4)
 
-    base_name = 'bottleneck_' + resnets[resnet_version][1]
+    base_name = f'bottleneck_{resnets[resnet_version][1]}'
     expected_decorated_ops = sorted([
-        base_name + '/conv1/Conv2D',
-        base_name + '/conv2/Conv2D',
-        base_name + '/conv3/Conv2D',
-        base_name + '/shortcut/Conv2D',
+        f'{base_name}/conv1/Conv2D',
+        f'{base_name}/conv2/Conv2D',
+        f'{base_name}/conv3/Conv2D',
+        f'{base_name}/shortcut/Conv2D',
     ])
 
     self.assertAllEqual(expected_decorated_ops,

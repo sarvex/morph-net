@@ -89,9 +89,8 @@ class LogisticSigmoidGating(tf.keras.layers.Layer):
       self.log_odds_init = tf.constant_initializer(self.log_odds_init)
     elif not isinstance(self.log_odds_init, init_ops.Initializer):
       raise ValueError(
-          'log_odds_init has unsupported value. '
-          'Should be a number or an initializer. Instead got: {}'.format(
-              type(self.log_odds_init)))
+          f'log_odds_init has unsupported value. Should be a number or an initializer. Instead got: {type(self.log_odds_init)}'
+      )
 
     if self.annealing_rate:
       if self.global_step is None:

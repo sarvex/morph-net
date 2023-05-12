@@ -118,7 +118,7 @@ def _get_output_filename(dataset_dir, split_name):
   Returns:
     An absolute file path.
   """
-  return '%s/cifar10_%s.tfrecord' % (dataset_dir, split_name)
+  return f'{dataset_dir}/cifar10_{split_name}.tfrecord'
 
 
 def _download_and_uncompress_dataset(dataset_dir):

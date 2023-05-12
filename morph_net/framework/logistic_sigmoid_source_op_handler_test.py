@@ -175,7 +175,7 @@ class LogisticSigmoidSourceOpHandlerTest(
           [mask_tensor, regularizer._regularization_vector])
 
       # Verify regularizer is the sliced mask tensor.
-      self.assertAllEqual(mask[0:3], reg_vec)
+      self.assertAllEqual(mask[:3], reg_vec)
 
   def testCreateRegularizer_OnLogits_Sliced(self):
     # Call handler to create regularizer.
@@ -195,7 +195,7 @@ class LogisticSigmoidSourceOpHandlerTest(
           [logits_tensor, regularizer._regularization_vector])
 
       # Verify regularizer is the sliced probability tensor.
-      self.assertAllEqual(sp.special.expit(logits[0:3]), reg_vec)
+      self.assertAllEqual(sp.special.expit(logits[:3]), reg_vec)
 
 if __name__ == '__main__':
   tf.test.main()

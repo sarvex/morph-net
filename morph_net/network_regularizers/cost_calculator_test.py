@@ -117,7 +117,8 @@ class CostCalculatorTest(parameterized.TestCase, tf.test.TestCase):
     self.assertEqual(
         inputs,
         cc.get_input_activation(
-            g.get_operation_by_name('test_layer/' + op_name)))
+            g.get_operation_by_name(f'test_layer/{op_name}')),
+    )
 
 
 if __name__ == '__main__':

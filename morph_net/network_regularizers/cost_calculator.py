@@ -129,7 +129,7 @@ def get_input_activation(op):
     ValueError: MatMul is used with transposition (unsupported).
   """
   if op.type not in SUPPORTED_OPS:
-    raise ValueError('Op type %s is not supported.' % op.type)
+    raise ValueError(f'Op type {op.type} is not supported.')
   if op.type in ('Conv3D', 'Conv2D', 'DepthwiseConv2dNative'):
     return op.inputs[0]
   if op.type == 'Conv2DBackpropInput':
@@ -144,8 +144,7 @@ def get_input_activation(op):
 def _count_alive(tensor, opreg):
   if opreg:
     return tf.reduce_sum(tf.cast(opreg.alive_vector, tf.float32))
-  shape = tensor.shape.as_list()
-  if shape:
+  if shape := tensor.shape.as_list():
     num_outputs = tensor.shape.as_list()[-1]
     if num_outputs is not None:
       return tf.constant(num_outputs, tf.float32)

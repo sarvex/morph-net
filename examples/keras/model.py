@@ -190,11 +190,11 @@ class MorphNetModel(object):
         Returns:
             model_loss: The loss of original model. Tensor.
         """
-        model_loss = tf.reduce_mean(
-            tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels,
-                                                       logits=logits))
-
-        return model_loss
+        return tf.reduce_mean(
+            tf.nn.softmax_cross_entropy_with_logits_v2(
+                labels=labels, logits=logits
+            )
+        )
 
     def average_gradients(self, tower_grads):
         """
@@ -242,7 +242,7 @@ class MorphNetModel(object):
 
         # Distribute the model onto available GPUs
         for i in range(self.num_gpus):
-            with tf.device("/gpu:{}".format(i)):
+            with tf.device(f"/gpu:{i}"):
 
                 optimizer = tf.train.AdamOptimizer(
                     learning_rate=self.learning_rate)
@@ -380,10 +380,7 @@ class MorphNetModel(object):
         """
         # Set the phase to test.
         tf.keras.backend.set_learning_phase(0)
-        probs = self.sess.run(self.probs_eval,
-                              feed_dict={self.inputs_eval: inputs})
-
-        return probs
+        return self.sess.run(self.probs_eval, feed_dict={self.inputs_eval: inputs})
 
     def export_model_config_with_inputs(self, inputs):
         """
@@ -405,9 +402,7 @@ class MorphNetModel(object):
         Returns:
             cost: The target cost of the model with the current architecture after MorphNet optimization. Float.
         """
-        cost = self.sess.run(self.cost_eval, feed_dict={self.inputs: inputs})
-
-        return cost
+        return self.sess.run(self.cost_eval, feed_dict={self.inputs: inputs})
 
     def set_morphnet_regularization_strength(self,
                                              morphnet_regularization_strength):
@@ -429,10 +424,9 @@ class MorphNetModel(object):
         network_cost_summary = tf.summary.scalar(
             self.network_regularizer_train_instance.cost_name,
             self.cost_train_instance)
-        morphnet_summary = tf.summary.merge(
-            [regularization_loss_summary, network_cost_summary])
-
-        return morphnet_summary
+        return tf.summary.merge(
+            [regularization_loss_summary, network_cost_summary]
+        )
 
     def close(self):
         """

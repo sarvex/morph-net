@@ -97,8 +97,8 @@ class StructureExporter(object):
     # TODO(p1): Rename values to something better. values is a dict!
     if sorted(values) != sorted(self.tensors):
       raise ValueError(
-          '`values` and `self.tensors` must have the same keys but are %s and %s'
-          % (sorted(values), sorted(self.tensors)))
+          f'`values` and `self.tensors` must have the same keys but are {sorted(values)} and {sorted(self.tensors)}'
+      )
     self._alive_vectors_as_values = values
 
   def get_alive_counts(self) -> Dict[Text, int]:
@@ -137,7 +137,7 @@ class StructureExporter(object):
       base_dir: where to export the alive counts.
       global_step: current value of global step, used as a suffix in filename.
     """
-    current_filename = '%s_%s' % (ALIVE_FILENAME, global_step)
+    current_filename = f'{ALIVE_FILENAME}_{global_step}'
     directory = os.path.join(base_dir, 'learned_structure')
     try:
       tf.gfile.MakeDirs(directory)

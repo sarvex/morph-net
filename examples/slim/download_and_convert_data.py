@@ -66,8 +66,7 @@ def main(_):
   elif FLAGS.dataset_name == 'mnist':
     download_and_convert_mnist.run(FLAGS.dataset_dir)
   else:
-    raise ValueError(
-        'dataset_name [%s] was not recognized.' % FLAGS.dataset_name)
+    raise ValueError(f'dataset_name [{FLAGS.dataset_name}] was not recognized.')
 
 if __name__ == '__main__':
   tf.app.run()

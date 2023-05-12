@@ -165,7 +165,7 @@ def main(_):
 
     # Print the summaries to screen.
     for name, value in names_to_values.items():
-      summary_name = 'eval/%s' % name
+      summary_name = f'eval/{name}'
       op = tf.summary.scalar(summary_name, value, collections=[])
       op = tf.Print(op, [value], summary_name)
       tf.add_to_collection(tf.GraphKeys.SUMMARIES, op)
@@ -182,7 +182,7 @@ def main(_):
     else:
       checkpoint_path = FLAGS.checkpoint_path
 
-    tf.logging.info('Evaluating %s' % checkpoint_path)
+    tf.logging.info(f'Evaluating {checkpoint_path}')
 
     slim.evaluation.evaluate_once(
         master=FLAGS.master,

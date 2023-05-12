@@ -78,10 +78,7 @@ class OutputNonPassthroughOpHandlerTest(tf.test.TestCase):
       if op in [self.conv1_op, self.conv2_op]:
         h = output_non_passthrough_op_handler.OutputNonPassthroughOpHandler()
         return h.is_passthrough
-      if op == self.batch_norm_op:
-        return True
-      else:
-        return False
+      return op == self.batch_norm_op
 
     self.mock_op_reg_manager.get_op_slices.side_effect = get_op_slices
     self.mock_op_reg_manager.get_op_group.side_effect = get_op_group

@@ -139,7 +139,7 @@ def _get_output_filename(dataset_dir, split_name):
   Returns:
     An absolute file path.
   """
-  return '%s/mnist_%s.tfrecord' % (dataset_dir, split_name)
+  return f'{dataset_dir}/mnist_{split_name}.tfrecord'
 
 
 def _download_dataset(dataset_dir):
@@ -155,11 +155,12 @@ def _download_dataset(dataset_dir):
     filepath = os.path.join(dataset_dir, filename)
 
     if not os.path.exists(filepath):
-      print('Downloading file %s...' % filename)
+      print(f'Downloading file {filename}...')
       def _progress(count, block_size, total_size):
         sys.stdout.write('\r>> Downloading %.1f%%' % (
             float(count * block_size) / float(total_size) * 100.0))
         sys.stdout.flush()
+
       filepath, _ = urllib.request.urlretrieve(_DATA_URL + filename,
                                                filepath,
                                                _progress)

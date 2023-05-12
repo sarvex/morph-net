@@ -139,8 +139,8 @@ def group_op_with_inputs_and_outputs(op, input_op_slices, output_op_slices,
           + output_op_slices_at_index)
       continue
 
-    if any([op_group != op_reg_manager.get_op_group(output_op_slice)
-            for output_op_slice in output_op_slices_at_index]):
+    if any(op_group != op_reg_manager.get_op_group(output_op_slice)
+           for output_op_slice in output_op_slices_at_index):
       # Some output OpSlice have different grouping.
       op_reg_manager.group_op_slices(
           [op_slices[slice_index]] + output_op_slices_at_index)
@@ -148,8 +148,8 @@ def group_op_with_inputs_and_outputs(op, input_op_slices, output_op_slices,
       op_group = op_reg_manager.get_op_group(op_slices[slice_index])
       inconsistent_grouping = True
 
-    if any([op_group != op_reg_manager.get_op_group(input_op_slice)
-            for input_op_slice in input_op_slices_at_index]):
+    if any(op_group != op_reg_manager.get_op_group(input_op_slice)
+           for input_op_slice in input_op_slices_at_index):
       # Some input OpSlice have different grouping.
       op_slice = op_slices[slice_index]
 
@@ -163,13 +163,13 @@ def group_op_with_inputs_and_outputs(op, input_op_slices, output_op_slices,
       input_source_op_slices_to_be_merged = [s for s in input_source_op_slices
                                              if s not in source_op_slices]
       if source_op_slices and input_source_op_slices_to_be_merged:
-        tf.logging.warn('Potential overregularization near {}.'.format(op.name))
+        tf.logging.warn(f'Potential overregularization near {op.name}.')
         tf.logging.warn('Downstream source slices:')
         for ss in source_op_slices:
-          tf.logging.warn('  {}'.format(ss))
+          tf.logging.warn(f'  {ss}')
         tf.logging.warn('...to be merged with upstream source slices:')
         for ss in input_source_op_slices_to_be_merged:
-          tf.logging.warn('  {}'.format(ss))
+          tf.logging.warn(f'  {ss}')
         tf.logging.warn('')
 
       op_reg_manager.group_op_slices([op_slice] + input_op_slices_at_index)
@@ -210,9 +210,7 @@ def get_op_slices(ops, op_reg_manager):
     List of list of OpSlice, where the outer list has a list per op, and the
     inner list is a list of OpSlice that compose the op.
   """
-  op_slices = []
-  for op in ops:
-    op_slices.append(op_reg_manager.get_op_slices(op))
+  op_slices = [op_reg_manager.get_op_slices(op) for op in ops]
   return list(filter(None, op_slices))
 
 
@@ -228,11 +226,7 @@ def get_op_slice_sizes(op_slices):
   Returns:
     List of list of OpSlice sizes where the outer list has an entry per op.
   """
-  op_slice_sizes = []
-  for op in op_slices:
-    op_slice_sizes.append([op_slice.slice.size for op_slice in op])
-
-  return op_slice_sizes
+  return [[op_slice.slice.size for op_slice in op] for op in op_slices]
 
 
 def get_aligned_op_slice_sizes(op_slices, input_op_slices, output_op_slices):
@@ -297,8 +291,7 @@ def get_aligned_sizes(op_slice_sizes):
       get_total_slice_size(op_slice_size, 0, len(op_slice_size))
       for op_slice_size in op_slice_sizes]
   if total_slice_sizes.count(total_slice_sizes[0]) != len(total_slice_sizes):
-    raise ValueError(
-        'Total size for op slices do not match: %s' % op_slice_sizes)
+    raise ValueError(f'Total size for op slices do not match: {op_slice_sizes}')
 
   # Make local copy of op_slice_sizes for destruction.
   aligned_op_slice_sizes = [list(op_slice_size)
@@ -311,14 +304,13 @@ def get_aligned_sizes(op_slice_sizes):
     op_slices_at_index = [slice_size[slice_index]
                           for slice_size in aligned_op_slice_sizes]
     min_slice_size = min(op_slices_at_index)
-    for op_index in range(len(aligned_op_slice_sizes)):
-      old_size = aligned_op_slice_sizes[op_index][slice_index]
+    for aligned_op_slice_size in aligned_op_slice_sizes:
+      old_size = aligned_op_slice_size[slice_index]
       if old_size != min_slice_size:
         # This OpSlice is bigger than the minimum, meaning this op needs to be
         # sliced again to match sizes.
-        aligned_op_slice_sizes[op_index][slice_index] = min_slice_size
-        aligned_op_slice_sizes[op_index].insert(
-            slice_index + 1, old_size - min_slice_size)
+        aligned_op_slice_size[slice_index] = min_slice_size
+        aligned_op_slice_size.insert(slice_index + 1, old_size - min_slice_size)
     num_slices = _get_num_slices(aligned_op_slice_sizes)
     slice_index += 1
   return aligned_op_slice_sizes[0]
@@ -334,7 +326,7 @@ def _get_num_slices(op_slice_sizes):
   Returns:
     Integer max number of slices in the list of ops.
   """
-  return max([len(slices) for slices in op_slice_sizes])
+  return max(len(slices) for slices in op_slice_sizes)
 
 
 def reslice_concat_ops(concat_ops, aligned_op_slice_sizes, op_reg_manager):
@@ -385,16 +377,15 @@ def reslice_concat_ops(concat_ops, aligned_op_slice_sizes, op_reg_manager):
             aligned_op_slice_sizes, concat_slice_index, slice_count)
 
       if concat_op_size != slice_size:
-        raise ValueError('Could not properly slice op: %s' % concat_op)
-      else:
-        # Now concat_slice_index and slice_count specify the sublist of aligned
-        # op slice sizes that match the current concat op.  Reslice the concat
-        # op using the aligned sizes.
-        op_reg_manager.slice_op(
-            concat_op,
-            aligned_op_slice_sizes[
-                concat_slice_index:concat_slice_index + slice_count])
-        concat_slice_index += slice_count
+        raise ValueError(f'Could not properly slice op: {concat_op}')
+      # Now concat_slice_index and slice_count specify the sublist of aligned
+      # op slice sizes that match the current concat op.  Reslice the concat
+      # op using the aligned sizes.
+      op_reg_manager.slice_op(
+          concat_op,
+          aligned_op_slice_sizes[
+              concat_slice_index:concat_slice_index + slice_count])
+      concat_slice_index += slice_count
 
 
 def get_total_slice_size(op_slice_sizes, index, slice_count):
@@ -441,8 +432,11 @@ def _get_source_op_slices(op_slices, op_reg_manager):
                for op_slice in op_slices
                if op_reg_manager.get_op_group(op_slice) is not None]
   # pylint: disable=g-complex-comprehension
-  return list(set([source_op_slice for op_group in op_groups
-                   for source_op_slice in op_group.source_op_slices]))
+  return list({
+      source_op_slice
+      for op_group in op_groups
+      for source_op_slice in op_group.source_op_slices
+  })
   # pylint: enable=g-complex-comprehension
 
 
@@ -503,13 +497,8 @@ def get_op_size(op):
     Integer output size of the op.
   """
   if op.type in OP_TYPES_WITH_MULTIPLE_OUTPUTS:
-    return sum([output_tensor.shape.as_list()[-1]
-                for output_tensor in op.outputs])
-  # For regular ops, return the size of the first output tensor.
-  shape = op.outputs[0].shape.as_list()
-  if shape:
-    return shape[-1]
-  return 0
+    return sum(output_tensor.shape.as_list()[-1] for output_tensor in op.outputs)
+  return shape[-1] if (shape := op.outputs[0].shape.as_list()) else 0
 
 
 def separate_same_size_ops(reference_op, ops):

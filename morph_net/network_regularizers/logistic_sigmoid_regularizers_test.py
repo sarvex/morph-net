@@ -70,7 +70,7 @@ class LogisticSigmoidFlopRegularizerTest(
         input_boundary=input_boundary)
 
   def GetConv(self, name):
-    return tf.get_default_graph().get_operation_by_name(name + '/Conv2D')
+    return tf.get_default_graph().get_operation_by_name(f'{name}/Conv2D')
 
   def GetCost(self, conv):
     with self.cached_session():

@@ -64,7 +64,7 @@ class LatencyRegularizerTest(parameterized.TestCase, tf.test.TestCase):
         gamma_threshold=0.45, hardware=HARDWARE)
 
   def get_conv(self, name):
-    return tf.get_default_graph().get_operation_by_name(name + '/Conv2D')
+    return tf.get_default_graph().get_operation_by_name(f'{name}/Conv2D')
 
   def init(self):
     tf.global_variables_initializer().run()

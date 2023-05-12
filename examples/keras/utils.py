@@ -94,8 +94,7 @@ def validate_epoch(epoch, model, x_valid, y_valid_onehot, batch_size):
         validation_idx[k:k + batch_size]
         for k in range(0, len(x_valid), batch_size)
     ]
-    tqdm_iterator = trange(len(mini_batch_idx),
-                           desc="Validation Epoch: {}".format(epoch))
+    tqdm_iterator = trange(len(mini_batch_idx), desc=f"Validation Epoch: {epoch}")
     num_validation_samples = 0
     num_correct_predictions = 0
     total_cost = 0
@@ -138,8 +137,7 @@ def train_epoch(epoch,
     mini_batch_idx = [
         train_idx[k:k + batch_size] for k in range(0, len(x_train), batch_size)
     ]
-    tqdm_iterator = trange(len(mini_batch_idx),
-                           desc="Train Epoch: {}".format(epoch))
+    tqdm_iterator = trange(len(mini_batch_idx), desc=f"Train Epoch: {epoch}")
     num_train_samples = 0
     num_correct_predictions = 0
     total_cost = 0

@@ -37,7 +37,7 @@ class ConcatOpHandler(op_handler.OpHandler):
     # Need to figure out the rank to know if axis is last.
     rank = len(op.inputs[0].shape)  # Rank of the first input.
 
-    if concat_axis != -1 and concat_axis != rank - 1:
+    if concat_axis not in [-1, rank - 1]:
       # Concat is actually grouping inputs!
       handler = grouping_op_handler.GroupingOpHandler()
       handler.assign_grouping(op, op_reg_manager)

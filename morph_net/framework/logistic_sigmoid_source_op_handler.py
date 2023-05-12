@@ -82,11 +82,10 @@ class LogisticSigmoidSourceOpHandler(grouping_op_handler.GroupingOpHandler):
           regularize_on_mask=self._regularize_on_mask,
           alive_threshold=self._alive_threshold,
           mask_as_alive_vector=self._mask_as_alive_vector)
-    else:
-      logits = tpu_util.maybe_convert_to_variable(logits)
-      return prob_gating_regularizer.ProbGatingRegularizer(
-          logits[start_index:start_index + size],
-          mask[start_index:start_index + size],
-          regularize_on_mask=self._regularize_on_mask,
-          alive_threshold=self._alive_threshold,
-          mask_as_alive_vector=self._mask_as_alive_vector)
+    logits = tpu_util.maybe_convert_to_variable(logits)
+    return prob_gating_regularizer.ProbGatingRegularizer(
+        logits[start_index:start_index + size],
+        mask[start_index:start_index + size],
+        regularize_on_mask=self._regularize_on_mask,
+        alive_threshold=self._alive_threshold,
+        mask_as_alive_vector=self._mask_as_alive_vector)

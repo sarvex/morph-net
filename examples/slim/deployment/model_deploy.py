@@ -218,8 +218,7 @@ def _gather_clone_loss(clone, num_clones, regularization_losses):
   # Compute and aggregate losses on the clone device.
   with tf.device(clone.device):
     all_losses = []
-    clone_losses = tf.get_collection(tf.GraphKeys.LOSSES, clone.scope)
-    if clone_losses:
+    if clone_losses := tf.get_collection(tf.GraphKeys.LOSSES, clone.scope):
       clone_loss = tf.add_n(clone_losses, name='clone_loss')
       if num_clones > 1:
         clone_loss = tf.div(clone_loss, 1.0 * num_clones,
@@ -443,7 +442,7 @@ def _sum_clones_gradients(clone_grads):
         grads.append(g)
     if grads:
       if len(grads) > 1:
-        sum_grad = tf.add_n(grads, name=var.op.name + '/sum_grads')
+        sum_grad = tf.add_n(grads, name=f'{var.op.name}/sum_grads')
       else:
         sum_grad = grads[0]
       sum_grads.append((sum_grad, var))
@@ -464,14 +463,12 @@ def _add_gradients_summaries(grads_and_vars):
   summaries = []
   for grad, var in grads_and_vars:
     if grad is not None:
-      if isinstance(grad, tf.IndexedSlices):
-        grad_values = grad.values
-      else:
-        grad_values = grad
-      summaries.append(tf.summary.histogram(var.op.name + ':gradient',
-                                            grad_values))
-      summaries.append(tf.summary.histogram(var.op.name + ':gradient_norm',
-                                            tf.global_norm([grad_values])))
+      grad_values = grad.values if isinstance(grad, tf.IndexedSlices) else grad
+      summaries.extend((
+          tf.summary.histogram(f'{var.op.name}:gradient', grad_values),
+          tf.summary.histogram(f'{var.op.name}:gradient_norm',
+                               tf.global_norm([grad_values])),
+      ))
     else:
       tf.logging.info('Var %s has no gradient', var.op.name)
   return summaries
@@ -519,9 +516,8 @@ class DeploymentConfig(object):
     Raises:
       ValueError: If the arguments are invalid.
     """
-    if num_replicas > 1:
-      if num_ps_tasks < 1:
-        raise ValueError('When using replicas num_ps_tasks must be positive')
+    if num_replicas > 1 and num_ps_tasks < 1:
+      raise ValueError('When using replicas num_ps_tasks must be positive')
     if num_replicas > 1 or num_ps_tasks > 0:
       if not worker_job_name:
         raise ValueError('Must specify worker_job_name when using replicas')
@@ -534,8 +530,8 @@ class DeploymentConfig(object):
     self._replica_id = replica_id
     self._num_replicas = num_replicas
     self._num_ps_tasks = num_ps_tasks
-    self._ps_device = '/job:' + ps_job_name if num_ps_tasks > 0 else ''
-    self._worker_device = '/job:' + worker_job_name if num_ps_tasks > 0 else ''
+    self._ps_device = f'/job:{ps_job_name}' if num_ps_tasks > 0 else ''
+    self._worker_device = f'/job:{worker_job_name}' if num_ps_tasks > 0 else ''
 
   @property
   def num_clones(self):
@@ -573,10 +569,7 @@ class DeploymentConfig(object):
     Returns:
       A device string or None if the variables do not need to be cached.
     """
-    if self._num_ps_tasks > 0:
-      return lambda op: op.device
-    else:
-      return None
+    return (lambda op: op.device) if self._num_ps_tasks > 0 else None
 
   def clone_device(self, clone_index):
     """Device used to create the clone and all the ops inside the clone.
@@ -615,10 +608,7 @@ class DeploymentConfig(object):
     """
     if clone_index >= self._num_clones:
       raise ValueError('clone_index must be less than num_clones')
-    scope = ''
-    if self._num_clones > 1:
-      scope = 'clone_%d' % clone_index
-    return scope
+    return 'clone_%d' % clone_index if self._num_clones > 1 else ''
 
   def optimizer_device(self):
     """Device to use with the optimizer.
@@ -627,7 +617,7 @@ class DeploymentConfig(object):
       A value suitable for `tf.device()`.
     """
     if self._num_ps_tasks > 0 or self._num_clones > 0:
-      return self._worker_device + '/device:CPU:0'
+      return f'{self._worker_device}/device:CPU:0'
     else:
       return ''
 
@@ -654,6 +644,8 @@ class DeploymentConfig(object):
       device += self._ps_device
     device += '/device:CPU:0'
 
+
+
     class _PSDeviceChooser(object):
       """Slim device chooser for variables when using PS."""
 
@@ -666,16 +658,15 @@ class DeploymentConfig(object):
         if op.device:
           return op.device
         node_def = op if isinstance(op, tf.NodeDef) else op.node_def
-        if node_def.op.startswith('Variable'):
-          t = self._task
-          self._task = (self._task + 1) % self._tasks
-          d = '%s/task:%d' % (self._device, t)
-          return d
-        else:
+        if not node_def.op.startswith('Variable'):
           return op.device
+
+        t = self._task
+        self._task = (self._task + 1) % self._tasks
+        return '%s/task:%d' % (self._device, t)
+
 
     if not self._num_ps_tasks:
       return device
-    else:
-      chooser = _PSDeviceChooser(device, self._num_ps_tasks)
-      return chooser.choose
+    chooser = _PSDeviceChooser(device, self._num_ps_tasks)
+    return chooser.choose

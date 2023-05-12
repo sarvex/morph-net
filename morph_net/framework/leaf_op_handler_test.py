@@ -222,9 +222,7 @@ class LeafOpHandlerTest(tf.test.TestCase):
     # Designate ReLU as non-passthrough for this test to demonstrate that batch
     # norm op does not group with ReLU.
     def is_passthrough(op):
-      if op == self.relu_op:
-        return False
-      return True
+      return op != self.relu_op
 
     self.mock_op_reg_manager.is_passthrough.side_effect = is_passthrough
 

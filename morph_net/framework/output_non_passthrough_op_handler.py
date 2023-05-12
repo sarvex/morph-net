@@ -102,9 +102,9 @@ class OutputNonPassthroughOpHandler(op_handler.OpHandler):
     op_slice_sizes = op_handler_util.get_op_slice_sizes([op_slices])
 
     if op_slice_sizes != output_op_slices_sizes:
-      raise ValueError('Current op and output op have differing slice '
-                       'sizes: {}, {}'.format(
-                           op_slice_sizes, output_op_slices_sizes))
+      raise ValueError(
+          f'Current op and output op have differing slice sizes: {op_slice_sizes}, {output_op_slices_sizes}'
+      )
 
     op_handler_util.group_op_with_inputs_and_outputs(
         op, [], output_op_slices, op_slice_sizes, op_reg_manager)
